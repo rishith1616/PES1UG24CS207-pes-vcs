@@ -96,6 +96,28 @@ static int atomic_write(const char *path, const char *data, size_t len) {
     return 0;
 }
 
+int object_write(const char *type, const char *data, size_t len, char *hash_out) {
+    // 1. Prepare Header
+    char header[128];
+    int header_len = snprintf(header, sizeof(header), "%s %zu", type, len) + 1;
+    
+    size_t total_len = header_len + len;
+    char *full_obj = malloc(total_len);
+    memcpy(full_obj, header, header_len);
+    memcpy(full_obj + header_len, data, len);
+
+    // 2. Compute Hash
+    compute_hash(full_obj, total_len, hash_out);
+
+    // 3. Sharding logic: .pes/objects/XX/XXXX...
+    char dir[256], path[512];
+    snprintf(dir, sizeof(dir), ".pes/objects/%.2s", hash_out);
+    snprintf(path, sizeof(path), "%s/%s", dir, hash_out + 2);
+
+    mkdir(".pes", 0755);
+    mkdir(".pes/objects", 0755);
+    mkdir(dir, 0755);
+
 
 // Returns 0 on success, -1 on error.
 int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out) {
