@@ -83,3 +83,4 @@ int index_add(Index *index, const char *path) {
     strncpy(e->path, path, sizeof(e->path)-1);
     return index_save(index);
 }
+// Phase 3 Final Polish
