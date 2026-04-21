@@ -71,6 +71,31 @@ static void compute_hash(const char *data, size_t len, char *hex_out) {
     hex_out[64] = '\0';
 }
 
+// Helper to write to a temp file and rename to destination
+static int atomic_write(const char *path, const char *data, size_t len) {
+    char temp_path[512];
+    snprintf(temp_path, sizeof(temp_path), "%s.tmp", path);
+    
+    FILE *f = fopen(temp_path, "wb");
+    if (!f) return -1;
+    
+    if (fwrite(data, 1, len, f) != len) {
+        fclose(f);
+        unlink(temp_path);
+        return -1;
+    }
+    
+    fflush(f);
+    fsync(fileno(f));
+    fclose(f);
+    
+    if (rename(temp_path, path) < 0) {
+        unlink(temp_path);
+        return -1;
+    }
+    return 0;
+}
+
 
 // Returns 0 on success, -1 on error.
 int object_write(ObjectType type, const void *data, size_t len, ObjectID *id_out) {
